@@ -416,7 +416,7 @@
         type: "bar",
         data: {
           labels: data.top_queries.map((q) => q.query),
-          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#d4a373", borderRadius: 4 }],
+          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#a16207", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -425,7 +425,7 @@
         type: "bar",
         data: {
           labels: data.ctr_by_position.map((p) => `#${p.position}`),
-          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#93c5fd", borderRadius: 4 }],
+          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#2563eb", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -437,8 +437,8 @@
           datasets: [{
             label: "Documents",
             data: data.docs_over_time.map((d) => d.count),
-            borderColor: "#c4b5fd",
-            backgroundColor: "rgba(196,181,253,0.08)",
+            borderColor: "#7c3aed",
+            backgroundColor: "rgba(124,58,237,0.08)",
             fill: true,
             tension: 0.3,
           }],

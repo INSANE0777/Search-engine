@@ -13,8 +13,8 @@ A vanilla JS, HTML, and CSS frontend for the Clarus Search engine.
 
 ## Design
 
-- Dark mode by default
-- Single warm accent (`#d4a373`) on charcoal surfaces
+- Clean editorial light mode with generous whitespace
+- Single warm accent (`#a16207`) on true white surfaces
 - Outfit for headings and UI, Space Mono for URLs and metadata
 - No framework, no build step
 
