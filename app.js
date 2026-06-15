@@ -88,8 +88,7 @@
     const main = document.getElementById("main");
     main.innerHTML = `
       <div class="home">
-        <div class="hero-glow"></div>
-        <div class="hero-copy">
+        <div class="hero-copy span-8">
           <div class="hero-eyebrow">Live index</div>
           <h1 class="hero-title">Search across <span>Wikipedia</span>, <span>Reddit</span>, and <span>GitHub</span>.</h1>
           <p class="hero-body">Three algorithms, one interface. Toggle sources, pick a ranking method, and find what you need without leaving the terminal aesthetic.</p>
@@ -99,7 +98,7 @@
             <div class="figure-pill"><strong>FTS5</strong> + vector fallback</div>
           </div>
         </div>
-        <div class="search-panel">
+        <div class="search-panel span-8">
           <form class="search-box" id="search-form">
             <input
               type="text"
@@ -447,8 +446,8 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#a1a1aa" } },
-          x: { grid: { display: false }, ticks: { color: "#a1a1aa" } },
+          y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#52525b" } },
+          x: { grid: { display: false }, ticks: { color: "#52525b" } },
         },
       };
 
@@ -456,7 +455,7 @@
         type: "bar",
         data: {
           labels: data.top_queries.map((q) => q.query),
-          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#7f4bf3", borderRadius: 4 }],
+          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#dc2626", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -465,7 +464,7 @@
         type: "bar",
         data: {
           labels: data.ctr_by_position.map((p) => `#${p.position}`),
-          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#6366f1", borderRadius: 4 }],
+          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#dc2626", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -477,8 +476,8 @@
           datasets: [{
             label: "Documents",
             data: data.docs_over_time.map((d) => d.count),
-            borderColor: "#7f4bf3",
-            backgroundColor: "rgba(127,75,243,0.12)",
+            borderColor: "#dc2626",
+            backgroundColor: "rgba(220,38,38,0.12)",
             fill: true,
             tension: 0.3,
           }],
@@ -668,7 +667,7 @@
       const ranked = data.ranked.slice(0, 8);
       const labels = ranked.map((r) => r.title || r.url);
       const scores = ranked.map((r) => Number(r.score || 0));
-      const color = data.algo === "bm25" ? "#7f4bf3" : data.algo === "tfidf" ? "#6366f1" : "#a78bfa";
+      const color = "#dc2626";
       new Chart(ctx, {
         type: "bar",
         data: {
@@ -681,8 +680,8 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#a1a1aa" } },
-            y: { grid: { display: false }, ticks: { color: "#a1a1aa" } },
+            x: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#52525b" } },
+            y: { grid: { display: false }, ticks: { color: "#52525b" } },
           },
         },
       });

@@ -13,7 +13,7 @@ A vanilla JS, HTML, and CSS frontend for the Clarus Search engine.
 
 ## Design
 
-- Dark-mode AI-benchmark aesthetic with purple accents and generous whitespace
+- Clean editorial light mode with generous whitespace
 - Single warm accent (`#a16207`) on true white surfaces
 - Outfit for headings and UI, Space Mono for URLs and metadata
 - No framework, no build step
