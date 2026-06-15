@@ -79,6 +79,8 @@
       state.traceQuery = params.get("q") || "";
       state.traceAlgo = params.get("algo") || "bm25";
       renderTrace();
+    } else if (path === "/evaluation") {
+      renderEvaluation();
     } else {
       renderHome();
     }
@@ -696,6 +698,89 @@
         },
       });
     }
+  }
+
+  function renderEvaluation() {
+    const main = document.getElementById("main");
+    main.innerHTML = `
+      <div class="page-header">
+        <h1>Evaluation</h1>
+        <p>Search quality metrics across BM25, TF-IDF, and semantic search. Relevance is auto-judged by title match.</p>
+      </div>
+      <div id="eval-output" class="trace-loading">Running evaluation...</div>
+    `;
+    runEvaluation();
+  }
+
+  async function runEvaluation() {
+    const output = document.getElementById("eval-output");
+    try {
+      const data = await api("/evaluation?k=10");
+      renderEvaluationOutput(data);
+    } catch (e) {
+      output.innerHTML = `<div class="result-card">Error: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderEvaluationOutput(data) {
+    const output = document.getElementById("eval-output");
+    const algos = data.algos || [];
+    const averaged = data.averaged || {};
+    const perQuery = data.per_query || [];
+    const k = data.k || 10;
+
+    const tableRows = algos.map((algo) => {
+      const m = averaged[algo] || {};
+      return `
+        <tr>
+          <td class="eval-algo">${algo.toUpperCase()}</td>
+          <td class="eval-metric">${m.ndcg != null ? m.ndcg.toFixed(4) : "-"}</td>
+          <td class="eval-metric">${m.mrr != null ? m.mrr.toFixed(4) : "-"}</td>
+          <td class="eval-metric">${m.precision != null ? m.precision.toFixed(4) : "-"}</td>
+          <td class="eval-metric">${m.recall != null ? m.recall.toFixed(4) : "-"}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const queries = data.queries || [];
+    const queryCards = queries.map((query) => {
+      const results = perQuery.filter((p) => p.query === query);
+      const rows = results.map((r) => `
+        <tr>
+          <td class="eval-algo">${r.algo.toUpperCase()}</td>
+          <td class="eval-metric">${r.ndcg.toFixed(4)}</td>
+          <td class="eval-metric">${r.mrr.toFixed(4)}</td>
+          <td class="eval-metric">${r.precision.toFixed(4)}</td>
+          <td class="eval-metric">${r.recall.toFixed(4)}</td>
+          <td class="eval-metric">${r.total_relevant}</td>
+        </tr>
+      `).join("");
+      return `
+        <div class="eval-query-card">
+          <div class="eval-query-title">${escapeHtml(query)}</div>
+          <table class="eval-table">
+            <thead><tr><th>Algo</th><th>NDCG</th><th>MRR</th><th>P@k</th><th>R@k</th><th>Rel</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }).join("");
+
+    output.innerHTML = `
+      <div class="eval-summary">
+        <h2>Averaged metrics @${k}</h2>
+        <table class="eval-table">
+          <thead>
+            <tr><th>Algorithm</th><th>NDCG</th><th>MRR</th><th>Precision</th><th>Recall</th></tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+      <div class="eval-query-grid">
+        <h2>Per-query breakdown</h2>
+        ${queryCards}
+      </div>
+    `;
   }
 
   function renderAdmin() {
