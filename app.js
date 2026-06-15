@@ -88,6 +88,7 @@
     const main = document.getElementById("main");
     main.innerHTML = `
       <div class="home">
+        <div class="hero-glow"></div>
         <div class="hero-copy">
           <div class="hero-eyebrow">Live index</div>
           <h1 class="hero-title">Search across <span>Wikipedia</span>, <span>Reddit</span>, and <span>GitHub</span>.</h1>
@@ -455,7 +456,7 @@
         type: "bar",
         data: {
           labels: data.top_queries.map((q) => q.query),
-          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#a16207", borderRadius: 4 }],
+          datasets: [{ label: "Searches", data: data.top_queries.map((q) => q.count), backgroundColor: "#7f4bf3", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -464,7 +465,7 @@
         type: "bar",
         data: {
           labels: data.ctr_by_position.map((p) => `#${p.position}`),
-          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#2563eb", borderRadius: 4 }],
+          datasets: [{ label: "CTR", data: data.ctr_by_position.map((p) => p.ctr), backgroundColor: "#6366f1", borderRadius: 4 }],
         },
         options: chartDefaults,
       });
@@ -476,8 +477,8 @@
           datasets: [{
             label: "Documents",
             data: data.docs_over_time.map((d) => d.count),
-            borderColor: "#7c3aed",
-            backgroundColor: "rgba(124,58,237,0.08)",
+            borderColor: "#7f4bf3",
+            backgroundColor: "rgba(127,75,243,0.12)",
             fill: true,
             tension: 0.3,
           }],
@@ -667,7 +668,7 @@
       const ranked = data.ranked.slice(0, 8);
       const labels = ranked.map((r) => r.title || r.url);
       const scores = ranked.map((r) => Number(r.score || 0));
-      const color = data.algo === "bm25" ? "#a16207" : data.algo === "tfidf" ? "#2563eb" : "#7c3aed";
+      const color = data.algo === "bm25" ? "#7f4bf3" : data.algo === "tfidf" ? "#6366f1" : "#a78bfa";
       new Chart(ctx, {
         type: "bar",
         data: {
@@ -680,8 +681,8 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#52525b" } },
-            y: { grid: { display: false }, ticks: { color: "#52525b" } },
+            x: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#a1a1aa" } },
+            y: { grid: { display: false }, ticks: { color: "#a1a1aa" } },
           },
         },
       });
