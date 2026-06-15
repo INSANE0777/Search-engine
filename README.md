@@ -5,8 +5,9 @@ A vanilla JS, HTML, and CSS frontend for the Clarus Search engine.
 ## What it is
 
 - Single-page app with hash-based routing
-- Search home with source toggles and algorithm selector
+- Search home with source toggles, algorithm selector, and live crawl toggle
 - Paginated results with source badges, scores, and highlighted snippets
+- Live crawl fallback: auto-crawls sources if indexed results are sparse
 - Trie-based autocomplete with keyboard navigation
 - Analytics dashboard using Chart.js
 - Admin panel for manual crawls

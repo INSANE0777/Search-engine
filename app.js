@@ -6,6 +6,7 @@
     query: "",
     algo: "bm25",
     source: "",
+    live: false,
     page: 1,
     suggestions: [],
     suggestionIndex: -1,
@@ -65,6 +66,7 @@
       state.query = params.get("q") || "";
       state.algo = params.get("algo") || "bm25";
       state.source = params.get("source") || "";
+      state.live = params.get("live") === "1" || params.get("live") === "true";
       state.page = parseInt(params.get("page") || "1", 10);
       renderResults();
     } else if (path === "/analytics") {
@@ -117,6 +119,9 @@
                 <option value="tfidf" ${state.algo === "tfidf" ? "selected" : ""}>TF-IDF</option>
                 <option value="semantic" ${state.algo === "semantic" ? "selected" : ""}>Semantic</option>
               </select>
+            </div>
+            <div class="control-group live-toggle">
+              <label><input type="checkbox" id="live-toggle" ${state.live ? "checked" : ""} /> Live crawl</label>
             </div>
           </div>
         </div>
@@ -217,10 +222,13 @@
     if (!state.query) return;
     state.algo = document.getElementById("algo-select").value;
     const source = getSelectedSource();
+    const live = document.getElementById("live-toggle")?.checked || false;
     state.source = source;
+    state.live = live;
     state.page = 1;
     const q = new URLSearchParams({ q: state.query, algo: state.algo, page: "1" });
     if (source) q.set("source", source);
+    if (live) q.set("live", "1");
     window.location.hash = `#/search?${q.toString()}`;
   }
 
@@ -258,6 +266,13 @@
               <option value="semantic" ${state.algo === "semantic" ? "selected" : ""}>Semantic</option>
             </select>
           </div>
+          <div class="filter-group live-toggle">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="live-toggle" ${state.live ? "checked" : ""} />
+              Live crawl fallback
+            </label>
+            <p style="font-size:0.75rem;color:var(--text-dim);margin:6px 0 0">Auto-crawl sources if indexed results are sparse.</p>
+          </div>
         </aside>
         <div class="results-main">
           <div class="results-header">
@@ -273,6 +288,8 @@
     document.getElementById("filter-source").addEventListener("change", (e) => updateResults({ source: e.target.value }));
     document.getElementById("filter-algo").addEventListener("change", (e) => updateResults({ algo: e.target.value }));
 
+    document.getElementById("live-toggle")?.addEventListener("change", (e) => updateResults({ live: e.target.checked }));
+
     try {
       const params = new URLSearchParams({
         q: state.query,
@@ -281,6 +298,7 @@
         limit: String(DEFAULT_LIMIT),
       });
       if (state.source) params.set("source", state.source);
+      if (state.live) params.set("live", "1");
       const data = await api(`/search?${params.toString()}`);
       renderResultsList(data);
       renderPagination(data);
@@ -292,7 +310,20 @@
 
   function renderResultsList(data) {
     const meta = document.getElementById("results-meta");
-    meta.innerHTML = `${formatNumber(data.total || 0)} results · ${data.response_time_ms || 0}ms`;
+    let metaHtml = `${formatNumber(data.total || 0)} results · ${data.response_time_ms || 0}ms`;
+    if (data.live) {
+      const crawled = data.crawl_info?.crawled_count ?? 0;
+      const inserted = data.crawl_info?.inserted_or_updated ?? 0;
+      const err = data.crawl_info?.error;
+      if (err) {
+        metaHtml += ` · <span style="color:var(--text-dim)">Live crawl failed</span>`;
+      } else if (crawled > 0) {
+        metaHtml += ` · <span style="color:var(--accent)">Live crawl: ${crawled} crawled, ${inserted} indexed</span>`;
+      } else {
+        metaHtml += ` · <span style="color:var(--text-dim)">Live search enabled</span>`;
+      }
+    }
+    meta.innerHTML = metaHtml;
     if (data.suggestion && data.suggestion !== data.query.toLowerCase()) {
       meta.innerHTML += `<div class="did-you-mean">Did you mean <a href="#/search?q=${encodeURIComponent(data.suggestion)}&algo=${state.algo}">${escapeHtml(data.suggestion)}</a>?</div>`;
     }
@@ -358,12 +389,14 @@
     if (updates.page !== undefined) state.page = updates.page;
     if (updates.source !== undefined) state.source = updates.source;
     if (updates.algo !== undefined) state.algo = updates.algo;
+    if (updates.live !== undefined) state.live = updates.live;
     const q = new URLSearchParams({
       q: state.query,
       algo: state.algo,
       page: String(state.page),
     });
     if (state.source) q.set("source", state.source);
+    if (state.live) q.set("live", "1");
     window.location.hash = `#/search?${q.toString()}`;
   }
 
