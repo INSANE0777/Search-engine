@@ -8,6 +8,7 @@ A vanilla JS, HTML, and CSS frontend for the Clarus Search engine.
 - Search home with source toggles, algorithm selector, and live crawl toggle
 - Paginated results with source badges, scores, and highlighted snippets
 - Live crawl fallback: auto-crawls sources if indexed results are sparse
+- Interactive `/trace` page showing how BM25, TF-IDF, or semantic search scores and ranks documents step by step
 - Trie-based autocomplete with keyboard navigation
 - Analytics dashboard using Chart.js
 - Admin panel for manual crawls

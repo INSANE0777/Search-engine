@@ -11,6 +11,8 @@
     suggestions: [],
     suggestionIndex: -1,
     logs: [],
+    traceQuery: "",
+    traceAlgo: "bm25",
   };
 
   async function api(path, options = {}) {
@@ -73,6 +75,10 @@
       renderAnalytics();
     } else if (path === "/admin") {
       renderAdmin();
+    } else if (path === "/trace") {
+      state.traceQuery = params.get("q") || "";
+      state.traceAlgo = params.get("algo") || "bm25";
+      renderTrace();
     } else {
       renderHome();
     }
@@ -480,6 +486,205 @@
       });
     } catch (e) {
       main.innerHTML += `<div class="result-card">Error loading analytics: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderTrace() {
+    const main = document.getElementById("main");
+    main.innerHTML = `
+      <div class="page-header">
+        <h1>Search Trace</h1>
+        <p>See how BM25, TF-IDF, or semantic search scores and ranks documents in real time.</p>
+      </div>
+      <div class="trace-form">
+        <div class="trace-field">
+          <label>Query</label>
+          <input type="text" id="trace-input" class="trace-input" placeholder="e.g. python programming" value="${escapeHtml(state.traceQuery)}" />
+        </div>
+        <div class="trace-field">
+          <label>Algorithm</label>
+          <select id="trace-algo" class="trace-select">
+            <option value="bm25" ${state.traceAlgo === "bm25" ? "selected" : ""}>BM25</option>
+            <option value="tfidf" ${state.traceAlgo === "tfidf" ? "selected" : ""}>TF-IDF</option>
+            <option value="semantic" ${state.traceAlgo === "semantic" ? "selected" : ""}>Semantic</option>
+          </select>
+        </div>
+        <button id="trace-run" class="admin-btn">Run trace</button>
+      </div>
+      <div id="trace-output"></div>
+    `;
+
+    document.getElementById("trace-run").addEventListener("click", runTrace);
+    document.getElementById("trace-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runTrace();
+    });
+
+    if (state.traceQuery) {
+      runTrace();
+    }
+  }
+
+  async function runTrace() {
+    const input = document.getElementById("trace-input");
+    const algo = document.getElementById("trace-algo").value;
+    state.traceQuery = input.value.trim();
+    state.traceAlgo = algo;
+    if (!state.traceQuery) return;
+
+    const output = document.getElementById("trace-output");
+    output.innerHTML = `<div class="trace-loading">Running trace...</div>`;
+
+    try {
+      const data = await api(`/search/trace?q=${encodeURIComponent(state.traceQuery)}&algo=${algo}&limit=5`);
+      renderTraceOutput(data);
+    } catch (e) {
+      output.innerHTML = `<div class="result-card">Error: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderTraceOutput(data) {
+    const output = document.getElementById("trace-output");
+    let steps = "";
+
+    // Step 1: Query preprocessing
+    steps += `
+      <div class="trace-step" style="animation-delay:0ms">
+        <div class="trace-step-header">1. Query preprocessing</div>
+        <div class="trace-step-body">
+          <div class="trace-pill-list">
+            <div class="trace-pill"><strong>Raw:</strong> ${escapeHtml(data.query)}</div>
+            <div class="trace-pill"><strong>Tokens:</strong> ${(data.tokens || []).map(escapeHtml).join(", ")}</div>
+            ${data.stemmed ? `<div class="trace-pill"><strong>Stemmed:</strong> ${data.stemmed.map(escapeHtml).join(", ")}</div>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Step 2: Algorithm setup
+    if (data.algo === "bm25") {
+      steps += `
+        <div class="trace-step" style="animation-delay:100ms">
+          <div class="trace-step-header">2. BM25 parameters</div>
+          <div class="trace-step-body">
+            <div class="trace-pill-list">
+              <div class="trace-pill">k1 = ${data.parameters.k1}</div>
+              <div class="trace-pill">b = ${data.parameters.b}</div>
+              <div class="trace-pill">avg document length = ${data.avgdl}</div>
+            </div>
+            <div class="trace-idf">
+              <strong>IDF per query token:</strong>
+              ${Object.entries(data.idf || {}).map(([t, v]) => `<span class="trace-idf-item">${escapeHtml(t)}: ${v.toFixed(4)}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (data.algo === "tfidf") {
+      steps += `
+        <div class="trace-step" style="animation-delay:100ms">
+          <div class="trace-step-header">2. TF-IDF query vector</div>
+          <div class="trace-step-body">
+            <div class="trace-vector">
+              ${Object.entries(data.query_vector || {}).map(([t, v]) => `<span class="trace-vector-item">${escapeHtml(t)}: ${v.toFixed(4)}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (data.algo === "semantic") {
+      steps += `
+        <div class="trace-step" style="animation-delay:100ms">
+          <div class="trace-step-header">2. Semantic embedding</div>
+          <div class="trace-step-body">
+            <div class="trace-pill"><strong>Model:</strong> ${escapeHtml(data.model)}</div>
+            <div class="trace-vector">
+              <strong>Query embedding preview:</strong>
+              ${(data.query_embedding_preview || []).map((v) => `<span class="trace-vector-item">${v}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Step 3: Document analysis
+    const docCards = (data.documents || []).map((doc, i) => {
+      let detail = "";
+      if (data.algo === "bm25") {
+        detail = `
+          <div class="trace-doc-meta">length: ${doc.doc_length} tokens · source: ${escapeHtml(doc.source)}</div>
+          <div class="trace-doc-terms">
+            ${Object.entries(doc.term_counts || {}).slice(0, 10).map(([t, c]) => `<span class="trace-doc-term">${escapeHtml(t)}: ${c}</span>`).join("")}
+          </div>
+          <div class="trace-doc-scores">
+            ${Object.entries(doc.term_scores || {}).map(([t, s]) => `<span class="trace-doc-score">${escapeHtml(t)}: ${s.toFixed(4)}</span>`).join("")}
+          </div>
+        `;
+      } else if (data.algo === "tfidf") {
+        detail = `
+          <div class="trace-doc-meta">source: ${escapeHtml(doc.source)}</div>
+          <div class="trace-vector">
+            ${Object.entries(doc.vector || {}).slice(0, 8).map(([t, v]) => `<span class="trace-vector-item">${escapeHtml(t)}: ${v.toFixed(4)}</span>`).join("")}
+          </div>
+        `;
+      } else if (data.algo === "semantic") {
+        detail = `
+          <div class="trace-doc-meta">cosine similarity: ${doc.cosine_similarity.toFixed(4)} · source: ${escapeHtml(doc.source)}</div>
+          <div class="trace-vector">
+            ${(doc.embedding_preview || []).map((v) => `<span class="trace-vector-item">${v}</span>`).join("")}
+          </div>
+        `;
+      }
+      return `
+        <div class="trace-doc-card" style="animation-delay:${200 + i * 80}ms">
+          <div class="trace-doc-title">${escapeHtml(doc.title)}</div>
+          <div class="trace-doc-url">${escapeHtml(doc.url)}</div>
+          ${detail}
+          <div class="trace-doc-final">final score: ${Number(doc.score || 0).toFixed(4)}</div>
+        </div>
+      `;
+    }).join("");
+
+    steps += `
+      <div class="trace-step" style="animation-delay:150ms">
+        <div class="trace-step-header">3. Document analysis</div>
+        <div class="trace-doc-grid">${docCards}</div>
+      </div>
+    `;
+
+    // Step 4: Final ranking chart
+    steps += `
+      <div class="trace-step" style="animation-delay:300ms">
+        <div class="trace-step-header">4. Final ranking</div>
+        <div class="trace-chart-wrap">
+          <canvas id="trace-chart"></canvas>
+        </div>
+      </div>
+    `;
+
+    output.innerHTML = `<div class="trace-steps">${steps}</div>`;
+
+    // Render chart
+    const ctx = document.getElementById("trace-chart");
+    if (ctx && data.ranked && data.ranked.length) {
+      const ranked = data.ranked.slice(0, 8);
+      const labels = ranked.map((r) => r.title || r.url);
+      const scores = ranked.map((r) => Number(r.score || 0));
+      const color = data.algo === "bm25" ? "#a16207" : data.algo === "tfidf" ? "#2563eb" : "#7c3aed";
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{ label: "Score", data: scores, backgroundColor: color, borderRadius: 4 }],
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#52525b" } },
+            y: { grid: { display: false }, ticks: { color: "#52525b" } },
+          },
+        },
+      });
     }
   }
 
