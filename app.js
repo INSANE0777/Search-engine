@@ -649,13 +649,23 @@
       </div>
     `;
 
-    // Step 4: Final ranking chart
+    // Step 4: Final ranking
+    const rankedItems = (data.ranked || []).slice(0, 10).map((r, i) => `
+      <div class="trace-ranked-item">
+        <span class="trace-ranked-rank">${i + 1}</span>
+        <span class="trace-ranked-title">${escapeHtml(r.title || r.url)}</span>
+        <span class="trace-ranked-score">${Number(r.score || 0).toFixed(4)}</span>
+      </div>
+    `).join("");
+
+    const rankedBody = data.ranked && data.ranked.length
+      ? `<div class="trace-chart-wrap"><canvas id="trace-chart"></canvas></div><div class="trace-ranked-list">${rankedItems}</div>`
+      : `<div class="trace-empty">No documents in the current index matched the query terms. Enable <strong>Live crawl</strong> on the search page to index fresh results for this query.</div>`;
+
     steps += `
       <div class="trace-step" style="animation-delay:300ms">
         <div class="trace-step-header">4. Final ranking</div>
-        <div class="trace-chart-wrap">
-          <canvas id="trace-chart"></canvas>
-        </div>
+        ${rankedBody}
       </div>
     `;
 
